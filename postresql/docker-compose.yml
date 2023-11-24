@@ -1,0 +1,23 @@
+version: "3.3"
+services:
+  db:
+    build:
+      context: ./Docker
+      dockerfile: Dockerfile
+    container_name: PostgresCont
+    restart: always
+    environment:
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # # General Config
+      # POSTGRES_DB: nuxeo
+      # POSTGRES_USER: nuxeo
+      # POSTGRES_PASSWORD: nuxeo
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - /tmp/my-postgres.conf:/var/lib/postgresql/data/pgdata/postgresql.conf
+      - /tmp/logs:/logs
+    ports:
+      - "5432:5432"
+volumes:
+  pgdata:
+    driver: local

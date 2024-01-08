@@ -1,23 +1,42 @@
-version: "3.3"
+version: "3.5"
 services:
-  db:
+  postgres:
+    container_name: postgres
     build:
-      context: ./Docker
+      context: ./docker
       dockerfile: Dockerfile
-    container_name: PostgresCont
     restart: always
+    env_file: .env
     environment:
-      PGDATA: /var/lib/postgresql/data/pgdata
-      # # General Config
-      # POSTGRES_DB: nuxeo
-      # POSTGRES_USER: nuxeo
-      # POSTGRES_PASSWORD: nuxeo
+      # General Config
+      POSTGRES_DB: ${POSTGRES_DB:-nuxeo}
+      POSTGRES_USER: ${POSTGRES_USER:-nuxeo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nuxeo}
+      PGDATA: ${PGDATA}
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - /tmp/my-postgres.conf:/var/lib/postgresql/data/pgdata/postgresql.conf
-      - /tmp/logs:/logs
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - postgres
     ports:
       - "5432:5432"
+  pgadmin:
+    container_name: pgadmin_container
+    image: dpage/pgadmin4
+    env_file: .env
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      # PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+       - pgadmin:/var/lib/pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    networks:
+      - postgres
+networks:
+  postgres:
+    external: true
 volumes:
-  pgdata:
+  postgres-data:
     driver: local
+  pgadmin:

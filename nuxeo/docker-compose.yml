@@ -1,63 +1,53 @@
 version: "3.3"
 services:
   nuxeo:
-    container_name: NuxeoCont
-    # build:
-    #   context: ./Docker
-    #   dockerfile: Dockerfile
-    image: nuxeo:latest
+    container_name: nuxeo
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+    # image: nuxeo:latest
     restart: always
     ports:
-      - "8080:8080"
+      - "${NUXEO_FW_PORT:-8080}:8080"
+    env_file: .env
     environment:
       # General Config
-      # NUXEO_URL: vista.bula21.ch
       NUXEO_PACKAGES: nuxeo-web-ui nuxeo-dam nuxeo-vision nuxeo-showcase-content nuxeo-spreadsheet nuxeo-template-rendering
       NUXEO_DATA: /var/lib/nuxeo/data
       NUXEO_LOG: /var/log/nuxeo
 
       # DB Config
-      # NUXEO_DB_TYPE: postgresql
-      # NUXEO_DB_NAME: nuxeo
-      # NUXEO_DB_USER: nuxeo
-      # NUXEO_DB_PASSWORD: nuxeo
-      # NUXEO_DB_HOST: PostgresCont
-      # NUXEO_DB_HOST: localhost
-      # NUXEO_DB_PORT: 5432
+      NUXEO_DB_TYPE: ${NUXEO_DB_TYPE:-postgresql}
+      NUXEO_DB_NAME: ${NUXEO_DB_NAME:-nuxeo}
+      NUXEO_DB_USER: ${NUXEO_DB_USER:-nuxeo}
+      NUXEO_DB_PASSWORD: ${NUXEO_DB_PASSWORD:-nuxeo}
+      NUXEO_DB_HOST: ${NUXEO_DB_HOST:-postgres}
 
       # Redis Config
-      NUXEO_REDIS_HOST: redis
-      NUXEO_REDIS_PORT: 6379
+      NUXEO_REDIS_HOST: ${NUXEO_REDIS_HOST:-redis}
+      NUXEO_REDIS_PORT: ${NUXEO_REDIS_PORT:-6379}
 
       # Elasticsearch Config
-      NUXEO_ES_HOSTS: elasticsearch:9300
-      NUXEO_ES_CLUSTER_NAME: elasticsearchCluster
-      NUXEO_ES_INDEX_NAME: nuxeo
-      NUXEO_ES_REPLICAS: 0
-      NUXEO_ES_SHARDS: 5
+      NUXEO_ES_HOSTS: ${NUXEO_ES_HOSTS:-elasticsearch:9300}
+      NUXEO_ES_CLUSTER_NAME: ${NUXEO_ES_CLUSTER_NAME:-elasticsearchCluster}
+      NUXEO_ES_INDEX_NAME: ${NUXEO_ES_INDEX_NAME:-nuxeo}
+      NUXEO_ES_REPLICAS: ${NUXEO_ES_REPLICAS:-0}
+      NUXEO_ES_SHARDS: ${NUXEO_ES_SHARDS:-5}
     volumes:
-      - ./Download_package/:/home/data/
+      - ./download_package/:/home/data/
       - nuxeo-data:/var/lib/nuxeo/data
       - nuxeo-logs:/var/log/nuxeo
+    networks:
+      - postgres
   # Redis Cache
-  postgres:
-      container_name: postgres
-      image: postgres:11.5-alpine
-      restart: always
-      environment:
-
-          # General Config
-          POSTGRES_DB: nuxeo
-          POSTGRES_USER: nuxeo
-          POSTGRES_PASSWORD: nuxeo
-      volumes:
-          - postgres-data:/var/lib/postgresql/data
   redis:
     container_name: redis
     image: redis:6.0.1
     restart: always
     volumes:
         - redis-data:/data
+    networks:
+        - postgres
 
   # Elasticsearch single node Cluster
   elasticsearch:
@@ -78,9 +68,13 @@ services:
         memlock:
             soft: -1
             hard: -1
+    networks:
+        - postgres
 volumes:
     nuxeo-data:
     nuxeo-logs:
-    postgres-data:
     redis-data:
     elasticsearch-data:
+networks:
+  postgres:
+    external: true
